@@ -1,6 +1,9 @@
+pub mod apktool;
 pub mod apps;
 pub mod emulator;
+pub mod jadx;
 pub mod mitm;
+pub mod mt_manager;
 pub mod ssl_pin;
 pub mod template;
 pub mod update;

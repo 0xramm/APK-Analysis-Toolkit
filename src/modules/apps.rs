@@ -157,7 +157,7 @@ pub fn package_info(pkg: &str, tx: &Sender<String>) {
     // Pull the APK once (if possible) and reuse it for both the manifest
     // dump and the signature check, instead of pulling it twice.
     tx.send("> pulling APK for manifest/signature checks...".into()).ok();
-    let apk_path = pull_apk(pkg, tx);
+    let apk_path = pull_apk_to(pkg, &cache::dir(), tx);
     let manifest = apk_path.as_ref().and_then(|p| manifest_info(p));
     let cert = apk_path.as_ref().and_then(|p| signing_cert(p));
     if let Some(p) = &apk_path {
@@ -276,20 +276,22 @@ pub fn package_info(pkg: &str, tx: &Sender<String>) {
     }
 }
 
-/// Pulls the installed APK to the cache dir for local analysis (manifest
-/// dump, signature check). None if the device/pull/pm path lookup fails.
-fn pull_apk(pkg: &str, tx: &Sender<String>) -> Option<std::path::PathBuf> {
+/// Pulls an installed package's APK into `dest_dir`. None if the device/pull/pm
+/// path lookup fails. Shared by package info (signature/manifest checks),
+/// apktool, and JADX — each decides for itself whether to keep the file after.
+pub fn pull_apk_to(pkg: &str, dest_dir: &std::path::Path, tx: &Sender<String>) -> Option<std::path::PathBuf> {
     let (ok, path_out) = shell::adb_run(&["shell", "pm", "path", pkg]);
     if !ok {
         return None;
     }
     let device_path = path_out.lines().find_map(|l| l.strip_prefix("package:"))?.trim();
 
-    let local = cache::dir().join(format!("{pkg}.apk"));
+    let _ = std::fs::create_dir_all(dest_dir);
+    let local = dest_dir.join(format!("{pkg}.apk"));
     let local_str = local.to_string_lossy().to_string();
     let (ok, _) = shell::adb_run(&["pull", device_path, &local_str]);
     if !ok {
-        tx.send("[!] couldn't pull the APK for manifest/signature checks.".into()).ok();
+        tx.send("[!] couldn't pull the APK.".into()).ok();
         return None;
     }
     Some(local)

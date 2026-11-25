@@ -21,7 +21,7 @@ use ratatui::{
     Frame, Terminal,
 };
 
-use modules::{apps, emulator, mitm, ssl_pin, template, update};
+use modules::{apktool, apps, emulator, jadx, mitm, mt_manager, ssl_pin, template, update};
 use util::shell;
 
 const SPINNER: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -30,10 +30,14 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[derive(Clone, Copy, PartialEq)]
 enum Screen {
     Main,
+    Static,
+    Dynamic,
     Emulator,
     SslPin,
     Mitm,
     Apps,
+    ApkTool,
+    Jadx,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -47,17 +51,24 @@ enum PendingAction {
     Disable,
     Enable,
     SelectDevice,
+    ApktoolDecompile,
+    ApktoolCompile,
+    JadxOpen,
 }
 
-const MAIN_ITEMS: [&str; 7] = [
+const MAIN_ITEMS: [&str; 4] =
+    ["Static Analysis Setup", "Dynamic Analysis Setup", "Select ADB device", "Quit"];
+const STATIC_ITEMS: [&str; 5] =
+    ["App manager (adb)", "APK tool (apktool)", "JADX", "MT Manager (install on device)", "Back"];
+const DYNAMIC_ITEMS: [&str; 5] = [
     "Run full setup (template)",
     "Emulator",
     "SSL pinning bypass",
     "mitmproxy",
-    "App manager (adb)",
-    "Select ADB device",
-    "Quit",
+    "Back",
 ];
+const APKTOOL_ITEMS: [&str; 3] = ["Decompile APK (pick package)", "Compile APK (from folder)", "Back"];
+const JADX_ITEMS: [&str; 2] = ["Open package in JADX", "Back"];
 const EMULATOR_ITEMS: [&str; 6] = [
     "Detect & list AVDs",
     "Create new AVD (if none exist)",
@@ -126,20 +137,28 @@ impl App {
     fn items(&self) -> &'static [&'static str] {
         match self.screen {
             Screen::Main => &MAIN_ITEMS,
+            Screen::Static => &STATIC_ITEMS,
+            Screen::Dynamic => &DYNAMIC_ITEMS,
             Screen::Emulator => &EMULATOR_ITEMS,
             Screen::SslPin => &SSLPIN_ITEMS,
             Screen::Mitm => &MITM_ITEMS,
             Screen::Apps => &APPS_ITEMS,
+            Screen::ApkTool => &APKTOOL_ITEMS,
+            Screen::Jadx => &JADX_ITEMS,
         }
     }
 
     fn title(&self) -> &'static str {
         match self.screen {
             Screen::Main => "APK Analysis Toolkit",
+            Screen::Static => "Static Analysis Setup",
+            Screen::Dynamic => "Dynamic Analysis Setup",
             Screen::Emulator => "Emulator",
             Screen::SslPin => "SSL Pinning Bypass",
             Screen::Mitm => "mitmproxy",
             Screen::Apps => "App Manager (adb)",
+            Screen::ApkTool => "APK Tool",
+            Screen::Jadx => "JADX",
         }
     }
 
@@ -154,7 +173,11 @@ impl App {
     }
 
     fn go_back(&mut self) {
-        self.screen = Screen::Main;
+        self.screen = match self.screen {
+            Screen::Apps | Screen::ApkTool | Screen::Jadx => Screen::Static,
+            Screen::Emulator | Screen::SslPin | Screen::Mitm => Screen::Dynamic,
+            _ => Screen::Main,
+        };
         self.reset_sel();
     }
 
@@ -204,6 +227,36 @@ impl App {
         let i = self.state.selected().unwrap_or(0);
         match self.screen {
             Screen::Main => match i {
+                0 => {
+                    self.screen = Screen::Static;
+                    self.reset_sel();
+                }
+                1 => {
+                    self.screen = Screen::Dynamic;
+                    self.reset_sel();
+                }
+                2 => self.open_picker(PendingAction::SelectDevice),
+                3 => return true,
+                _ => {}
+            },
+            Screen::Static => match i {
+                0 => {
+                    self.screen = Screen::Apps;
+                    self.reset_sel();
+                }
+                1 => {
+                    self.screen = Screen::ApkTool;
+                    self.reset_sel();
+                }
+                2 => {
+                    self.screen = Screen::Jadx;
+                    self.reset_sel();
+                }
+                3 => self.start_job(|tx| mt_manager::install(&tx)),
+                4 => self.go_back(),
+                _ => {}
+            },
+            Screen::Dynamic => match i {
                 0 => self.start_job(|tx| template::run(&tx)),
                 1 => {
                     self.screen = Screen::Emulator;
@@ -217,12 +270,18 @@ impl App {
                     self.screen = Screen::Mitm;
                     self.reset_sel();
                 }
-                4 => {
-                    self.screen = Screen::Apps;
-                    self.reset_sel();
-                }
-                5 => self.open_picker(PendingAction::SelectDevice),
-                6 => return true,
+                4 => self.go_back(),
+                _ => {}
+            },
+            Screen::ApkTool => match i {
+                0 => self.open_picker(PendingAction::ApktoolDecompile),
+                1 => self.ask("Decompiled folder path: ", PendingAction::ApktoolCompile),
+                2 => self.go_back(),
+                _ => {}
+            },
+            Screen::Jadx => match i {
+                0 => self.open_picker(PendingAction::JadxOpen),
+                1 => self.go_back(),
                 _ => {}
             },
             Screen::Emulator => match i {
@@ -415,6 +474,8 @@ fn run_loop<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> anyhow::Re
                         PendingAction::Enable => app.start_job(move |tx| { apps::enable(&pkg, &tx); }),
                         PendingAction::PackageInfo => app.start_job(move |tx| apps::package_info(&pkg, &tx)),
                         PendingAction::Launch => app.start_job(move |tx| apps::launch(&pkg, &tx)),
+                        PendingAction::ApktoolDecompile => app.start_job(move |tx| apktool::decompile_package(&pkg, &tx)),
+                        PendingAction::JadxOpen => app.start_job(move |tx| jadx::open_package(&pkg, &tx)),
                         PendingAction::SelectDevice => {
                             if pkg.is_empty() {
                                 shell::set_selected_device(None);
@@ -424,7 +485,7 @@ fn run_loop<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> anyhow::Re
                                 app.log = vec![format!("[OK] now targeting {pkg} for all adb actions.")];
                             }
                         }
-                        PendingAction::InstallApk => {}
+                        PendingAction::InstallApk | PendingAction::ApktoolCompile => {} // free-text-only
                     }
                 }
                 _ => {}
@@ -445,7 +506,13 @@ fn run_loop<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> anyhow::Re
                         PendingAction::Uninstall => app.start_job(move |tx| apps::uninstall(&value, &tx)),
                         PendingAction::Disable => app.start_job(move |tx| apps::disable(&value, &tx)),
                         PendingAction::Enable => app.start_job(move |tx| apps::enable(&value, &tx)),
-                        PendingAction::StopBypass | PendingAction::PackageInfo | PendingAction::Launch | PendingAction::SelectDevice => {} // picker-only
+                        PendingAction::ApktoolCompile => app.start_job(move |tx| apktool::compile_folder(&value, &tx)),
+                        PendingAction::StopBypass
+                        | PendingAction::PackageInfo
+                        | PendingAction::Launch
+                        | PendingAction::SelectDevice
+                        | PendingAction::ApktoolDecompile
+                        | PendingAction::JadxOpen => {} // picker-only
                     }
                 }
                 KeyCode::Backspace => {
@@ -536,7 +603,7 @@ fn draw(f: &mut Frame, app: &mut App) {
     };
     f.render_widget(Paragraph::new(help).style(Style::default().fg(Color::DarkGray)), outer[1]);
 
-    let footer_text = format!("0xramm    v{VERSION}");
+    let footer_text = format!("0xramm────v{VERSION}");
     let footer = Block::default()
         .borders(Borders::TOP)
         .title_top(Line::from(footer_text).right_aligned().style(Style::default().fg(Color::DarkGray)));

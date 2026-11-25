@@ -5,7 +5,7 @@ description: Get a working rooted sandbox in one pass.
 
 ## Fastest path: Run full setup
 
-From the main menu, select **Run full setup (template)**. This single action:
+From the main menu, select **Dynamic Analysis Setup → Run full setup (template)**. This single action:
 
 1. Detects your Android SDK and lists existing AVDs, tagging each as rootable or not.
 2. If no AVD exists — or none of the existing ones support root — creates a Google APIs (no Play Store) AVD, which is rootable and has broad package compatibility.
@@ -32,8 +32,9 @@ Long-running steps show a spinner and live progress in the log pane — `Enter` 
 
 ## Next steps
 
-Once the pipeline completes, you have a rooted emulator with traffic routed through mitmproxy. From here:
+Once the pipeline completes, you have a rooted emulator with traffic routed through mitmproxy. From here, all under **Static Analysis Setup**:
 
 - Install a target APK via **App manager → Install APK**.
 - Run **App manager → Package info** on it first — the automated red-flags check (see [Package Info & Red Flags](/APK-Analysis-Toolkit/app-manager/package-info-and-red-flags/)) is worth running on anything you didn't build yourself.
-- Use **SSL pinning bypass → Bypass pinning for a package** if the app pins its own certificates.
+- Decompile it with **[APK tool](/APK-Analysis-Toolkit/static-analysis/apktool/)** or **[JADX](/APK-Analysis-Toolkit/static-analysis/jadx/)** if the red flags (or your own curiosity) warrant a closer look at what it actually does.
+- Back in **Dynamic Analysis Setup → SSL pinning bypass → Bypass pinning for a package** if the app pins its own certificates.

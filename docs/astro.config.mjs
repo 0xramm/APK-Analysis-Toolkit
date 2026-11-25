@@ -22,28 +22,21 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'Emulator',
+					label: 'Static Analysis Setup',
 					items: [
-						{ label: 'AVDs & Rooting', slug: 'emulator/avds-and-rooting' },
+						{ label: 'App Manager: Listing & Filtering', slug: 'app-manager/listing-and-filtering' },
+						{ label: 'App Manager: Package Info & Red Flags', slug: 'app-manager/package-info-and-red-flags' },
+						{ label: 'APK Tool (apktool)', slug: 'static-analysis/apktool' },
+						{ label: 'JADX', slug: 'static-analysis/jadx' },
+						{ label: 'MT Manager', slug: 'static-analysis/mt-manager' },
 					],
 				},
 				{
-					label: 'SSL Pinning Bypass',
+					label: 'Dynamic Analysis Setup',
 					items: [
-						{ label: 'Bypass & Re-pin', slug: 'ssl-pinning/bypass-and-repin' },
-					],
-				},
-				{
-					label: 'mitmproxy',
-					items: [
-						{ label: 'Proxy & CA Certificate', slug: 'mitmproxy/proxy-and-cert' },
-					],
-				},
-				{
-					label: 'App Manager',
-					items: [
-						{ label: 'Listing & Filtering', slug: 'app-manager/listing-and-filtering' },
-						{ label: 'Package Info & Red Flags', slug: 'app-manager/package-info-and-red-flags' },
+						{ label: 'Emulator: AVDs & Rooting', slug: 'emulator/avds-and-rooting' },
+						{ label: 'SSL Pinning: Bypass & Re-pin', slug: 'ssl-pinning/bypass-and-repin' },
+						{ label: 'mitmproxy: Proxy & CA Certificate', slug: 'mitmproxy/proxy-and-cert' },
 					],
 				},
 				{

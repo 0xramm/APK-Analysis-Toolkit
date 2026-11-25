@@ -31,6 +31,9 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 	<Card title="Malware-Style Triage" icon="warning">
 		`Package info` automatically flags name/location impersonation, dangerous permission combos, placeholder versions, and verifies the real signing certificate — caught a fake "mParivahan" app posing as Google Play Services live, during development.
 	</Card>
+	<Card title="Static Analysis Tools" icon="open-book">
+		A separate Static Analysis Setup menu auto-installs apktool and JADX on first use, decompiles a picked package straight from the device into the repo's own `workspace/` folder, and gets MT Manager onto the sandbox for on-device poking around.
+	</Card>
 </CardGrid>
 
 ## Why this exists

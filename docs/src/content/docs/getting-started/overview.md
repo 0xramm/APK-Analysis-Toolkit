@@ -13,19 +13,29 @@ Security researchers, malware analysts, and pentesters who need to:
 - Bypass SSL/certificate pinning on a target app to inspect its traffic.
 - Intercept and decrypt HTTPS traffic via mitmproxy, with the device's trust store set up correctly the first time.
 - Triage a suspicious APK — package identity, permissions, signing certificate — without manually running `dumpsys`, `aapt`, and `apksigner` by hand every time.
+- Decompile an APK's resources/manifest (apktool) or its Java source (JADX) without separately installing and wiring up either tool.
 
 ## How it's organized
 
-Everything is reachable from one top-level menu, each a self-contained screen:
+The main menu splits into two setups, each a self-contained branch of screens:
+
+**Static Analysis Setup** — everything that inspects an APK/package without needing it running:
+
+- **App manager (adb)** — list/filter packages, [detailed package info with automated red-flag detection](/APK-Analysis-Toolkit/app-manager/package-info-and-red-flags/), install/uninstall/enable/disable/launch.
+- **[APK tool (apktool)](/APK-Analysis-Toolkit/static-analysis/apktool/)** — decompile a picked package's resources/manifest, or recompile an edited folder.
+- **[JADX](/APK-Analysis-Toolkit/static-analysis/jadx/)** — decompile a picked package straight into `jadx-gui`.
+- **[MT Manager](/APK-Analysis-Toolkit/static-analysis/mt-manager/)** — get an on-device file/APK manager installed on the emulator.
+
+**Dynamic Analysis Setup** — everything that needs a running, rooted device:
 
 - **Emulator** — detect/list AVDs, create a rootable one, launch it, root/de-root.
 - **SSL pinning bypass** — install Frida tooling, push `frida-server`, bypass/re-pin a picked package.
 - **mitmproxy** — install, start the proxy + web UI, install the CA certificate as a trusted system root.
-- **App manager (adb)** — list/filter packages, detailed package info with automated red-flag detection, install/uninstall/enable/disable/launch.
-- **Select ADB device** — pin a specific device when more than one is attached.
-- **Run full setup (template)** — chains the whole pipeline end-to-end with live progress.
+- **Run full setup (template)** — chains the whole dynamic-analysis pipeline end-to-end with live progress.
 
-Every long-running step (system image downloads, pip installs, frida-server downloads) streams real progress instead of going silent, and the binary checks GitHub for a newer release on every launch.
+Plus, from the main menu directly: **Select ADB device** — pin a specific device when more than one is attached.
+
+Every long-running step (system image downloads, pip installs, frida-server/apktool/JADX downloads) streams real progress instead of going silent, and the binary checks GitHub for a newer release on every launch.
 
 ## Design principles
 
