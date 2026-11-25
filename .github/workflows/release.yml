@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Stage binary
+        run: Copy-Item target/release/apk-toolkit.exe apk-toolkit.exe
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apk-toolkit.exe
+          generate_release_notes: true
