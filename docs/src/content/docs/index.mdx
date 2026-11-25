@@ -1,0 +1,38 @@
+---
+title: APK Analysis Toolkit
+description: A Rust TUI for rooted Android sandboxes, SSL-pinning bypass, mitmproxy interception, and automated malware-style package analysis.
+template: splash
+hero:
+  tagline: One TUI for building a rooted Android sandbox, bypassing SSL pinning, intercepting traffic, and spotting malware red flags automatically.
+  actions:
+    - text: Get Started
+      link: /APK-Analysis-Toolkit/getting-started/overview/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/0xramm/APK-Analysis-Toolkit
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What it does
+
+<CardGrid stagger>
+	<Card title="Rooted Sandbox" icon="rocket">
+		Detects or creates a rootable (non–Play Store) Android emulator, roots/de-roots it on demand, and runs the whole setup with live progress — no silent multi-minute waits.
+	</Card>
+	<Card title="SSL Pinning Bypass" icon="approve-check">
+		Pushes frida-server, bypasses pinning for a picked package via Frida's codeshare, and tracks active sessions so you can re-pin cleanly.
+	</Card>
+	<Card title="mitmproxy Interception" icon="magnifier">
+		Starts mitmweb with a valid auth token (no more 403s), filters out connectivity-check noise, and installs its CA as a trusted system root — including the dm-verity reboot cycle most guides skip.
+	</Card>
+	<Card title="Malware-Style Triage" icon="warning">
+		`Package info` automatically flags name/location impersonation, dangerous permission combos, placeholder versions, and verifies the real signing certificate — caught a fake "mParivahan" app posing as Google Play Services live, during development.
+	</Card>
+</CardGrid>
+
+## Why this exists
+
+Setting up an Android pentest/malware-analysis sandbox usually means stitching together Android Studio, Frida, objection, and mitmproxy by hand from a dozen different guides — and re-learning the same gotchas every time (dm-verity reboot cycles, ambiguous multi-device `adb` sessions, mitmweb's token requirement). This toolkit automates the whole pipeline in one terminal UI, and documents every gotcha it had to work around along the way.
