@@ -5,7 +5,7 @@ description: How to install the APK Analysis Toolkit and its prerequisites.
 
 ## Download a release
 
-Grab the latest `apk-toolkit.exe` from the [Releases page](https://github.com/0xramm/APK-Analysis-Toolkit/releases). The binary checks for a newer release on every launch and updates itself automatically — see [Auto-Update & Releases](/APK-Analysis-Toolkit/operations/auto-update/).
+Grab the latest `apkat-setup.exe` from the [Releases page](https://github.com/0xramm/APK-Analysis-Toolkit/releases) and run it. The installer copies `apkat.exe` into place and adds its install folder to your user `PATH`, so `apkat` works from any terminal afterward — no admin rights needed. Once installed, the binary checks for a newer release on every launch and updates itself automatically — see [Auto-Update & Releases](/APK-Analysis-Toolkit/operations/auto-update/).
 
 ## Build from source
 
@@ -17,7 +17,7 @@ cd APK-Analysis-Toolkit
 cargo build --release
 ```
 
-The binary is produced at `target/release/apk-toolkit.exe`.
+The binary is produced at `target/release/apkat.exe`.
 
 ## Prerequisites
 

@@ -32,9 +32,9 @@ Long-running steps show a spinner and live progress in the log pane — `Enter` 
 
 ## Next steps
 
-Once the pipeline completes, you have a rooted emulator with traffic routed through mitmproxy. From here, all under **Static Analysis Setup**:
+Once the pipeline completes, you have a rooted emulator with traffic routed through mitmproxy. From here:
 
-- Install a target APK via **App manager → Install APK**.
-- Run **App manager → Package info** on it first — the automated red-flags check (see [Package Info & Red Flags](/APK-Analysis-Toolkit/app-manager/package-info-and-red-flags/)) is worth running on anything you didn't build yourself.
+- Install a target APK via **App Manager → Install APK**.
+- Run **App Manager → Package info** on it first — the automated red-flags check (see [Package Info & Red Flags](/APK-Analysis-Toolkit/app-manager/package-info-and-red-flags/)) is worth running on anything you didn't build yourself.
 - Decompile it with **[APK tool](/APK-Analysis-Toolkit/static-analysis/apktool/)** or **[JADX](/APK-Analysis-Toolkit/static-analysis/jadx/)** if the red flags (or your own curiosity) warrant a closer look at what it actually does.
 - Back in **Dynamic Analysis Setup → SSL pinning bypass → Bypass pinning for a package** if the app pins its own certificates.

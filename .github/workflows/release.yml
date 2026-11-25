@@ -16,14 +16,27 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Verify Cargo.toml version matches the tag
+        run: |
+          $tagVersion = "${{ github.ref_name }}" -replace '^v', ''
+          $cargoVersion = (Select-String -Path Cargo.toml -Pattern '^version = "(.*)"').Matches[0].Groups[1].Value
+          if ($cargoVersion -ne $tagVersion) {
+            Write-Error "Cargo.toml version ($cargoVersion) doesn't match tag v$tagVersion — bump Cargo.toml's version and push a new commit before tagging. A mismatch here means the built exe reports the old version forever, which makes the auto-updater redownload it on every launch."
+            exit 1
+          }
+
       - name: Build release binary
         run: cargo build --release
 
-      - name: Stage binary
-        run: Copy-Item target/release/apk-toolkit.exe apk-toolkit.exe
+      - name: Build installer
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=$version installer.iss
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: apk-toolkit.exe
+          files: |
+            target/release/apkat.exe
+            installer-out/apkat-setup.exe
           generate_release_notes: true

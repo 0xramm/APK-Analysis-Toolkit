@@ -22,10 +22,15 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'App Manager',
+					items: [
+						{ label: 'Listing & Searching Packages', slug: 'app-manager/listing-and-filtering' },
+						{ label: 'Package Info & Red Flags', slug: 'app-manager/package-info-and-red-flags' },
+					],
+				},
+				{
 					label: 'Static Analysis Setup',
 					items: [
-						{ label: 'App Manager: Listing & Filtering', slug: 'app-manager/listing-and-filtering' },
-						{ label: 'App Manager: Package Info & Red Flags', slug: 'app-manager/package-info-and-red-flags' },
 						{ label: 'APK Tool (apktool)', slug: 'static-analysis/apktool' },
 						{ label: 'JADX', slug: 'static-analysis/jadx' },
 						{ label: 'MT Manager', slug: 'static-analysis/mt-manager' },

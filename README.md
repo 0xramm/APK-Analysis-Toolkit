@@ -17,14 +17,21 @@
   <a href="https://github.com/0xramm/APK-Analysis-Toolkit/releases/latest"><b>Latest Release</b></a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/0xramm/APK-Analysis-Toolkit/releases/latest">
+    <img src="https://img.shields.io/github/v/release/0xramm/APK-Analysis-Toolkit?label=latest%20release&color=blue" alt="Latest release">
+  </a>
+</p>
+
 ---
 
 ## What it does
 
-One TUI, two setups:
+One TUI, three menus:
 
-**Static Analysis Setup** — inspecting an APK/package without needing it running:
-- **App manager (adb)** — list/filter installed packages, pull detailed package info with automated red-flag detection (name impersonation, dangerous permission combos, signing certificate), install/uninstall/enable/disable/launch.
+**App manager (adb)** — list every installed package (no name-based filtering — type-to-filter search instead), pull detailed package info with automated red-flag detection (name impersonation, dangerous permission combos, signing certificate), install/uninstall/enable/disable/launch.
+
+**Static Analysis Setup** — everything else that inspects an APK/package without needing it running:
 - **APK tool (apktool)** — decompile a picked package's resources/manifest, or recompile an edited folder.
 - **JADX** — decompile a picked package straight into `jadx-gui`.
 - **MT Manager** — get an on-device file/APK manager installed on the emulator.
@@ -55,7 +62,7 @@ This toolkit doesn't reimplement any of these — it detects, installs, configur
 
 ## Install
 
-Grab the latest `apk-toolkit.exe` from **[Releases](https://github.com/0xramm/APK-Analysis-Toolkit/releases/latest)** — it checks for and installs updates on its own from then on.
+Grab the latest `apkat-setup.exe` from **[Releases](https://github.com/0xramm/APK-Analysis-Toolkit/releases/latest)** and run it — it installs `apkat.exe` and adds it to your `PATH`, so `apkat` works from any terminal. From then on it checks for and installs updates on its own.
 
 Or build from source:
 

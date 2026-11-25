@@ -1,26 +1,6 @@
 use std::sync::mpsc::Sender;
-use std::sync::{Mutex, OnceLock};
 
 use crate::util::{cache, sdk, shell};
-
-fn hide_system_flag() -> &'static Mutex<bool> {
-    static FLAG: OnceLock<Mutex<bool>> = OnceLock::new();
-    FLAG.get_or_init(|| Mutex::new(true))
-}
-
-pub fn hide_system_packages() -> bool {
-    *hide_system_flag().lock().unwrap()
-}
-
-/// Flips the com.android.*/com.google.* filter and returns a status line for the log.
-pub fn toggle_system_filter() -> String {
-    let mut flag = hide_system_flag().lock().unwrap();
-    *flag = !*flag;
-    format!(
-        "[OK] com.android.*/com.google.* system packages are now {}",
-        if *flag { "hidden" } else { "shown" }
-    )
-}
 
 /// Permissions that are individually unremarkable but, combined with other
 /// signals (name impersonation, placeholder version, sideloaded), are the
@@ -58,13 +38,11 @@ pub fn packages() -> Vec<String> {
     if !ok {
         return Vec::new();
     }
-    let hide = hide_system_packages();
-    let mut pkgs: Vec<String> = out
-        .lines()
-        .filter_map(|l| l.strip_prefix("package:"))
-        .filter(|p| !hide || (!p.starts_with("com.android") && !p.starts_with("com.google")))
-        .map(str::to_string)
-        .collect();
+    // No name-based filtering here — the picker's type-to-filter search
+    // handles narrowing the list, and hiding packages by name is exactly
+    // the kind of thing a disguised/malicious package can exploit.
+    let mut pkgs: Vec<String> =
+        out.lines().filter_map(|l| l.strip_prefix("package:")).map(str::to_string).collect();
     pkgs.sort_unstable();
     pkgs
 }
@@ -82,12 +60,7 @@ pub fn list_packages(tx: &Sender<String>) {
         tx.send("[FAIL] no packages found (or the adb call failed).".into()).ok();
         return;
     }
-    let filter_note = if hide_system_packages() {
-        "system packages hidden — toggle via 'Toggle system-package filter'"
-    } else {
-        "showing all, including system packages"
-    };
-    tx.send(format!("[OK] {} packages ({filter_note})", pkgs.len())).ok();
+    tx.send(format!("[OK] {} packages", pkgs.len())).ok();
     for p in pkgs {
         tx.send(format!("    {p}")).ok();
     }

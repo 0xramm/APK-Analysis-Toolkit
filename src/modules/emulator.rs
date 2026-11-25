@@ -137,15 +137,18 @@ pub fn needs_rootable_avd() -> bool {
     !list_avd_names(&bin).iter().any(|n| avd_is_rootable(n))
 }
 
-/// Launches the preferred (rootable, if one exists) AVD — falling back to
-/// DEFAULT_AVD only when none exist at all (that only works if 'Create new
-/// AVD' already ran).
+/// Launches the preferred (rootable, if one exists) AVD out of whatever
+/// actually exists on this machine — never a hardcoded name, since a name
+/// with no matching AVD just fails with a confusing "AVD not found" error.
 pub fn launch_avd(tx: &Sender<String>) -> bool {
     let Some(bin) = shell::locate("emulator", "-version", sdk::emulator_path()) else {
         tx.send("[MISSING] Android emulator not found.".into()).ok();
         return false;
     };
-    let name = preferred_avd_name().unwrap_or_else(|| DEFAULT_AVD.to_string());
+    let Some(name) = preferred_avd_name() else {
+        tx.send("[FAIL] No AVDs found. Use 'Create new AVD' first.".into()).ok();
+        return false;
+    };
     tx.send(format!("== Launching '{name}' ==")).ok();
 
     tx.send("> clearing stale adb device state...".into()).ok();

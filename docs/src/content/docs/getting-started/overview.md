@@ -17,11 +17,12 @@ Security researchers, malware analysts, and pentesters who need to:
 
 ## How it's organized
 
-The main menu splits into two setups, each a self-contained branch of screens:
+The main menu splits into three branches of screens:
 
-**Static Analysis Setup** — everything that inspects an APK/package without needing it running:
+**App Manager (adb)** — list every installed package (no name-based filtering — [search instead](/APK-Analysis-Toolkit/app-manager/listing-and-filtering/)), [detailed package info with automated red-flag detection](/APK-Analysis-Toolkit/app-manager/package-info-and-red-flags/), install/uninstall/enable/disable/launch.
 
-- **App manager (adb)** — list/filter packages, [detailed package info with automated red-flag detection](/APK-Analysis-Toolkit/app-manager/package-info-and-red-flags/), install/uninstall/enable/disable/launch.
+**Static Analysis Setup** — everything else that inspects an APK/package without needing it running:
+
 - **[APK tool (apktool)](/APK-Analysis-Toolkit/static-analysis/apktool/)** — decompile a picked package's resources/manifest, or recompile an edited folder.
 - **[JADX](/APK-Analysis-Toolkit/static-analysis/jadx/)** — decompile a picked package straight into `jadx-gui`.
 - **[MT Manager](/APK-Analysis-Toolkit/static-analysis/mt-manager/)** — get an on-device file/APK manager installed on the emulator.

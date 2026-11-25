@@ -28,7 +28,7 @@ The report opens with a `!! RED FLAGS !!` section (if any fire) before the routi
 
 ## Worked example
 
-During development, this exact flow caught a real sample: an APK downloaded as a fake Indian vehicle-registration app ("mParivahan") whose manifest package name was `com.google.android.gmscore` — deliberately impersonating Google Play Services' package ID so it would sit unnoticed among platform noise (and specifically slip past the system-package filter above).
+During development, this exact flow caught a real sample: an APK downloaded as a fake Indian vehicle-registration app ("mParivahan") whose manifest package name was `com.google.android.gmscore` — deliberately impersonating Google Play Services' package ID so it would sit unnoticed among 200+ platform packages in a plain list (exactly why the package list is never filtered by name — see [Listing & Searching Packages](/APK-Analysis-Toolkit/app-manager/listing-and-filtering/)).
 
 ```
 Package: com.google.android.gmscore

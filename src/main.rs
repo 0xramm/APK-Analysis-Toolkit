@@ -56,10 +56,14 @@ enum PendingAction {
     JadxOpen,
 }
 
-const MAIN_ITEMS: [&str; 4] =
-    ["Static Analysis Setup", "Dynamic Analysis Setup", "Select ADB device", "Quit"];
-const STATIC_ITEMS: [&str; 5] =
-    ["App manager (adb)", "APK tool (apktool)", "JADX", "MT Manager (install on device)", "Back"];
+const MAIN_ITEMS: [&str; 5] = [
+    "App manager (adb)",
+    "Static Analysis Setup",
+    "Dynamic Analysis Setup",
+    "Select ADB device",
+    "Quit",
+];
+const STATIC_ITEMS: [&str; 4] = ["APK tool (apktool)", "JADX", "MT Manager (install on device)", "Back"];
 const DYNAMIC_ITEMS: [&str; 5] = [
     "Run full setup (template)",
     "Emulator",
@@ -90,9 +94,8 @@ const MITM_ITEMS: [&str; 4] = [
     "Wait for cert & install as system CA",
     "Back",
 ];
-const APPS_ITEMS: [&str; 9] = [
+const APPS_ITEMS: [&str; 8] = [
     "List installed packages",
-    "Toggle system-package filter (com.android.*/com.google.*)",
     "Package info (detailed report)",
     "Launch package",
     "Install APK",
@@ -111,8 +114,27 @@ struct AwaitingInput {
 struct Picker {
     items: Vec<String>,
     labels: Vec<String>,
+    filter: String,
     state: ListState,
     action: PendingAction,
+}
+
+impl Picker {
+    /// Indices into `items`/`labels` matching the current filter (all of
+    /// them if the filter is empty) — lets you type a package name instead
+    /// of scrolling through a long list to find it.
+    fn visible(&self) -> Vec<usize> {
+        if self.filter.is_empty() {
+            return (0..self.items.len()).collect();
+        }
+        let needle = self.filter.to_lowercase();
+        self.labels
+            .iter()
+            .enumerate()
+            .filter(|(_, l)| l.to_lowercase().contains(&needle))
+            .map(|(i, _)| i)
+            .collect()
+    }
 }
 
 struct App {
@@ -174,9 +196,9 @@ impl App {
 
     fn go_back(&mut self) {
         self.screen = match self.screen {
-            Screen::Apps | Screen::ApkTool | Screen::Jadx => Screen::Static,
+            Screen::ApkTool | Screen::Jadx => Screen::Static,
             Screen::Emulator | Screen::SslPin | Screen::Mitm => Screen::Dynamic,
-            _ => Screen::Main,
+            _ => Screen::Main, // includes Apps — now reached directly from Main
         };
         self.reset_sel();
     }
@@ -228,32 +250,32 @@ impl App {
         match self.screen {
             Screen::Main => match i {
                 0 => {
-                    self.screen = Screen::Static;
-                    self.reset_sel();
-                }
-                1 => {
-                    self.screen = Screen::Dynamic;
-                    self.reset_sel();
-                }
-                2 => self.open_picker(PendingAction::SelectDevice),
-                3 => return true,
-                _ => {}
-            },
-            Screen::Static => match i {
-                0 => {
                     self.screen = Screen::Apps;
                     self.reset_sel();
                 }
                 1 => {
-                    self.screen = Screen::ApkTool;
+                    self.screen = Screen::Static;
                     self.reset_sel();
                 }
                 2 => {
+                    self.screen = Screen::Dynamic;
+                    self.reset_sel();
+                }
+                3 => self.open_picker(PendingAction::SelectDevice),
+                4 => return true,
+                _ => {}
+            },
+            Screen::Static => match i {
+                0 => {
+                    self.screen = Screen::ApkTool;
+                    self.reset_sel();
+                }
+                1 => {
                     self.screen = Screen::Jadx;
                     self.reset_sel();
                 }
-                3 => self.start_job(|tx| mt_manager::install(&tx)),
-                4 => self.go_back(),
+                2 => self.start_job(|tx| mt_manager::install(&tx)),
+                3 => self.go_back(),
                 _ => {}
             },
             Screen::Dynamic => match i {
@@ -310,14 +332,13 @@ impl App {
             },
             Screen::Apps => match i {
                 0 => self.start_job(|tx| apps::list_packages(&tx)),
-                1 => self.log = vec![apps::toggle_system_filter()],
-                2 => self.open_picker(PendingAction::PackageInfo),
-                3 => self.open_picker(PendingAction::Launch),
-                4 => self.ask("APK path: ", PendingAction::InstallApk),
-                5 => self.open_picker(PendingAction::Uninstall),
-                6 => self.open_picker(PendingAction::Disable),
-                7 => self.open_picker(PendingAction::Enable),
-                8 => self.go_back(),
+                1 => self.open_picker(PendingAction::PackageInfo),
+                2 => self.open_picker(PendingAction::Launch),
+                3 => self.ask("APK path: ", PendingAction::InstallApk),
+                4 => self.open_picker(PendingAction::Uninstall),
+                5 => self.open_picker(PendingAction::Disable),
+                6 => self.open_picker(PendingAction::Enable),
+                7 => self.go_back(),
                 _ => {}
             },
         }
@@ -376,7 +397,7 @@ impl App {
         };
         let mut state = ListState::default();
         state.select(Some(0));
-        self.picker = Some(Picker { items, labels, state, action });
+        self.picker = Some(Picker { items, labels, filter: String::new(), state, action });
     }
 }
 
@@ -450,20 +471,38 @@ fn run_loop<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> anyhow::Re
         }
 
         if let Some(picker) = &mut app.picker {
+            let visible = picker.visible();
             match key.code {
                 KeyCode::Esc => app.picker = None,
-                KeyCode::Down | KeyCode::Char('j') => {
-                    let len = picker.items.len();
-                    let i = picker.state.selected().unwrap_or(0);
-                    picker.state.select(Some(wrap_index(i, 1, len)));
+                KeyCode::Down => {
+                    let len = visible.len();
+                    if len > 0 {
+                        let i = picker.state.selected().unwrap_or(0);
+                        picker.state.select(Some(wrap_index(i, 1, len)));
+                    }
                 }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    let len = picker.items.len();
-                    let i = picker.state.selected().unwrap_or(0);
-                    picker.state.select(Some(wrap_index(i, -1, len)));
+                KeyCode::Up => {
+                    let len = visible.len();
+                    if len > 0 {
+                        let i = picker.state.selected().unwrap_or(0);
+                        picker.state.select(Some(wrap_index(i, -1, len)));
+                    }
+                }
+                // Typing narrows the list instead of scrolling it — j/k are no
+                // longer vim-bound here since they're valid package-name letters.
+                KeyCode::Char(c) => {
+                    picker.filter.push(c);
+                    picker.state.select(Some(0));
+                }
+                KeyCode::Backspace => {
+                    picker.filter.pop();
+                    picker.state.select(Some(0));
                 }
                 KeyCode::Enter => {
-                    let pkg = picker.items[picker.state.selected().unwrap_or(0)].clone();
+                    let Some(&real_idx) = visible.get(picker.state.selected().unwrap_or(0)) else {
+                        continue;
+                    };
+                    let pkg = picker.items[real_idx].clone();
                     let action = picker.action;
                     app.picker = None;
                     match action {
@@ -561,9 +600,15 @@ fn draw(f: &mut Frame, app: &mut App) {
         .split(outer[0]);
 
     if let Some(picker) = &mut app.picker {
-        let items: Vec<ListItem> = picker.labels.iter().map(|l| ListItem::new(l.as_str())).collect();
+        let visible = picker.visible();
+        let items: Vec<ListItem> = visible.iter().map(|&i| ListItem::new(picker.labels[i].as_str())).collect();
+        let title = if picker.filter.is_empty() {
+            "Select a package (type to filter)".to_string()
+        } else {
+            format!("Select a package — filter: {}_  ({} match{})", picker.filter, visible.len(), if visible.len() == 1 { "" } else { "es" })
+        };
         let list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("Select a package"))
+            .block(Block::default().borders(Borders::ALL).title(title))
             .highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Green))
             .highlight_symbol("> ");
         f.render_stateful_widget(list, chunks[0], &mut picker.state);
@@ -593,7 +638,7 @@ fn draw(f: &mut Frame, app: &mut App) {
     f.render_widget(log_widget, chunks[1]);
 
     let help = if app.picker.is_some() {
-        "↑/↓ or j/k move · Enter choose package · Esc cancel".to_string()
+        "↑/↓ move · type to filter · Backspace delete · Enter choose · Esc cancel".to_string()
     } else {
         match &app.input {
             Some(input) => format!("{}{}_", input.prompt, input.buffer),
@@ -603,11 +648,14 @@ fn draw(f: &mut Frame, app: &mut App) {
     };
     f.render_widget(Paragraph::new(help).style(Style::default().fg(Color::DarkGray)), outer[1]);
 
-    let footer_text = format!("0xramm────v{VERSION}");
-    let footer = Block::default()
-        .borders(Borders::TOP)
-        .title_top(Line::from(footer_text).right_aligned().style(Style::default().fg(Color::DarkGray)));
-    f.render_widget(footer, outer[2]);
+    // One continuous line of the same dash character throughout, with the
+    // label built into it — a separate Block border + overlaid title looked
+    // like two mismatched line styles meeting mid-row instead of one rule.
+    let label = format!("0xramm────v{VERSION}");
+    let width = outer[2].width as usize;
+    let rule_len = width.saturating_sub(label.chars().count());
+    let footer_line = format!("{}{label}", "─".repeat(rule_len));
+    f.render_widget(Paragraph::new(footer_line).style(Style::default().fg(Color::DarkGray)), outer[2]);
 }
 
 /// Colors a log line by its status prefix and strips the `==` header markers.
@@ -629,4 +677,40 @@ fn style_log_line(line: &str) -> Line<'static> {
         Style::default()
     };
     Line::styled(line.to_string(), style)
+}
+
+#[cfg(test)]
+mod picker_tests {
+    use super::*;
+
+    fn picker(names: &[&str]) -> Picker {
+        let items: Vec<String> = names.iter().map(|s| s.to_string()).collect();
+        Picker {
+            labels: items.clone(),
+            items,
+            filter: String::new(),
+            state: ListState::default(),
+            action: PendingAction::Launch,
+        }
+    }
+
+    #[test]
+    fn empty_filter_shows_everything_in_order() {
+        let p = picker(&["com.android.chrome", "com.example.app", "com.google.gms"]);
+        assert_eq!(p.visible(), vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn filter_narrows_by_substring_case_insensitively() {
+        let mut p = picker(&["com.android.chrome", "com.example.app", "com.google.gms"]);
+        p.filter = "EXAMPLE".to_string();
+        assert_eq!(p.visible(), vec![1]);
+    }
+
+    #[test]
+    fn filter_matching_nothing_is_empty_not_a_panic() {
+        let mut p = picker(&["com.android.chrome"]);
+        p.filter = "zzz-no-match".to_string();
+        assert!(p.visible().is_empty());
+    }
 }
