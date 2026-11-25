@@ -30,7 +30,6 @@ Name: "{group}\APK Analysis Toolkit"; Filename: "{app}\{#MyAppExeName}"
 [Code]
 const
   EnvKey = 'Environment';
-  HWND_BROADCAST = $FFFF;
   WM_SETTINGCHANGE = $1A;
   SMTO_ABORTIFHUNG = 2;
 
